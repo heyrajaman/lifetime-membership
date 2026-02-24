@@ -43,8 +43,7 @@ class PaymentService {
         {
           applicant_id: applicantId,
           razorpay_order_id: order.id,
-          amount_in_paise: order.amount,
-          amount_in_rupees: this.MEMBERSHIP_FEE,
+          amount: this.MEMBERSHIP_FEE,
           status: "PENDING",
         },
         { transaction },
