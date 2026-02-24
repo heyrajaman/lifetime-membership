@@ -1,0 +1,45 @@
+import { DataTypes } from "sequelize";
+import { sequelize } from "../../config/database.js";
+
+const Applicant = sequelize.define(
+  "Applicant",
+  {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
+    full_name: { type: DataTypes.STRING, allowNull: false },
+    father_or_husband_name: { type: DataTypes.STRING, allowNull: false },
+    permanent_address: { type: DataTypes.TEXT, allowNull: false },
+    current_address: { type: DataTypes.TEXT, allowNull: false },
+    mobile_number: { type: DataTypes.STRING, allowNull: false },
+    email: { type: DataTypes.STRING, allowNull: false },
+    education: { type: DataTypes.STRING, allowNull: false },
+    occupation: { type: DataTypes.STRING, allowNull: false },
+    office_address: { type: DataTypes.TEXT },
+    date_of_birth: { type: DataTypes.DATEONLY, allowNull: false },
+    marriage_date: { type: DataTypes.DATEONLY },
+    blood_group: { type: DataTypes.STRING(10) },
+    membership_type: {
+      type: DataTypes.ENUM("LIFETIME"),
+      defaultValue: "LIFETIME",
+    },
+    status: {
+      type: DataTypes.ENUM(
+        "PENDING_MEMBER_APPROVAL",
+        "APPROVED_BY_MEMBER",
+        "REJECTED_BY_MEMBER",
+        "PENDING_PRESIDENT_APPROVAL",
+        "APPROVED_BY_PRESIDENT",
+        "REJECTED_BY_PRESIDENT",
+        "PAYMENT_PENDING",
+        "PAYMENT_COMPLETED",
+      ),
+      defaultValue: "PENDING_MEMBER_APPROVAL",
+    },
+  },
+  { tableName: "applicants", timestamps: true },
+);
+
+export default Applicant;

@@ -22,3 +22,6 @@ Thumbs.db
 
 # temp files
 .tmp/
+
+# Temporary local file uploads
+temp_uploads/

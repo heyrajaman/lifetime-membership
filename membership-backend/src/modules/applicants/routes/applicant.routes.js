@@ -1,0 +1,28 @@
+import express from "express";
+import applicantController from "../controllers/applicant.controller.js";
+import { upload } from "../../../middlewares/upload.middleware.js";
+import { verifyAdmin } from "../../../middlewares/auth.middleware.js";
+
+const router = express.Router();
+
+router.post(
+  "/",
+  upload.fields([
+    { name: "applicant_photo", maxCount: 1 },
+    { name: "applicant_signature", maxCount: 1 },
+  ]),
+  applicantController.createApplicant.bind(applicantController),
+);
+
+router.get(
+  "/",
+  verifyAdmin,
+  applicantController.getApplicants.bind(applicantController),
+);
+router.get(
+  "/:id",
+  verifyAdmin,
+  applicantController.getApplicantById.bind(applicantController),
+);
+
+export default router;
