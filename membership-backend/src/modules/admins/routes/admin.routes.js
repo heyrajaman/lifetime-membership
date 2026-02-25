@@ -5,4 +5,6 @@ const router = express.Router();
 
 router.post("/login", adminController.login.bind(adminController));
 
+router.get("/members", adminController.getProposers.bind(adminController));
+
 export default router;

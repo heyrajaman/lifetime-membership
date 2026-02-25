@@ -8,7 +8,9 @@ import {
 class ApplicantRepository {
   // Creates a new applicant, optionally within a database transaction
   async create(applicantData, transaction = null) {
-    return await Applicant.create(applicantData, { transaction });
+    return await Applicant.create(applicantData, { 
+      include: [{ model: FileUpload, as: 'files' }],
+      transaction });
   }
 
   // Fetches an applicant by ID, including their proposer, uploaded files, and payment status

@@ -23,6 +23,22 @@ class AdminController {
         .json({ success: false, message: error.message });
     }
   }
+
+  async getProposers(req, res) {
+    try {
+      // Extract search from the URL query parameters
+      const searchTerm = req.query.search || "";
+
+      const members = await adminService.getAllProposers(searchTerm);
+
+      return res.status(200).json({ success: true, data: members });
+    } catch (error) {
+      console.error("Error fetching proposers:", error);
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to fetch proposers list." });
+    }
+  }
 }
 
 export default new AdminController();

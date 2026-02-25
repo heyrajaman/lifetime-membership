@@ -4,6 +4,7 @@ import {
   Applicant,
   ApprovalToken,
   Member,
+  FileUpload,
 } from "../../../database/index.js";
 import emailService from "../../common/services/email.service.js";
 
@@ -114,7 +115,7 @@ class ApprovalService {
   async getApplicantDetailsByToken(tokenStr, expectedRole) {
     // Find the valid, unused token and join it with the full Applicant and Proposer data
     const tokenRecord = await ApprovalToken.findOne({
-      where: { token: tokenStr, role_required: expectedRole, is_used: false },
+      where: { token: tokenStr, role_required: expectedRole },
       include: [
         {
           model: Applicant,
@@ -122,7 +123,11 @@ class ApprovalService {
           include: [
             { model: Member, as: "proposer", attributes: ["name"] },
             // If you imported FileUpload at the top, you can include files here too
-            // { model: FileUpload, as: 'files', attributes: ['file_type', 'minio_url'] }
+            {
+              model: FileUpload,
+              as: "files",
+              attributes: ["file_type", "minio_url"],
+            },
           ],
         },
       ],
@@ -137,7 +142,10 @@ class ApprovalService {
     }
 
     // Return the full applicant data so the frontend can display the form
-    return tokenRecord.applicant;
+    return {
+      applicant: tokenRecord.applicant,
+      is_used: tokenRecord.is_used,
+    };
   }
 }
 

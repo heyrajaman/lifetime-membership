@@ -1,5 +1,5 @@
 import paymentService from "../services/payment.service.js";
-
+import { Applicant } from "../../../database/index.js";
 class PaymentController {
   async createOrder(req, res) {
     try {
@@ -48,6 +48,25 @@ class PaymentController {
       });
     }
   }
+
+async checkStatus(req, res, next) {
+    try {
+      const { applicant_id } = req.params;
+      const applicant = await Applicant.findByPk(applicant_id);
+      
+      if (!applicant) {
+        return res.status(404).json({ success: false, message: "Applicant not found." });
+      }
+
+      // If status is PAYMENT_COMPLETED, tell React 'isPaid: true'
+      const isPaid = applicant.status === 'PAYMENT_COMPLETED';
+      
+      res.status(200).json({ success: true, isPaid, status: applicant.status });
+    } catch (error) {
+      next(error);
+    }
+  }
+
 }
 
 export default new PaymentController();
