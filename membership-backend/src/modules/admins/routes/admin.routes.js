@@ -20,4 +20,18 @@ router.get(
   adminController.downloadIdCard.bind(adminController),
 );
 
+// Admin: Get full list of members for management grid
+router.get(
+  "/all-members",
+  verifyAdmin,
+  adminController.getAllMembersAdmin.bind(adminController),
+);
+
+// Admin: Toggle a member's active/inactive status
+router.patch(
+  "/members/:id/status",
+  verifyAdmin,
+  adminController.toggleMemberStatus.bind(adminController),
+);
+
 export default router;

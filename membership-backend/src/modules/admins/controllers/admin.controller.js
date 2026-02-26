@@ -40,6 +40,36 @@ class AdminController {
     }
   }
 
+  // Handles GET request for the Admin to see all members (Active & Inactive)
+  async getAllMembersAdmin(req, res) {
+    try {
+      const members = await adminService.getAllMembersForAdmin();
+      return res.status(200).json({ success: true, data: members });
+    } catch (error) {
+      console.error("Error fetching admin member list:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch members list.",
+      });
+    }
+  }
+
+  // Handles PATCH request to toggle member status
+  async toggleMemberStatus(req, res) {
+    try {
+      const { id } = req.params;
+      const result = await adminService.toggleMemberStatus(id);
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error("Error toggling member status:", error);
+      const statusCode = error.statusCode || 500;
+      return res.status(statusCode).json({
+        success: false,
+        message: error.message || "Failed to toggle status.",
+      });
+    }
+  }
+
   async promoteApplicant(req, res) {
     try {
       const { applicant_id, registration_number } = req.body;
