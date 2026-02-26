@@ -14,6 +14,15 @@ router.post(
   applicantController.createApplicant.bind(applicantController),
 );
 
+router.put(
+  "/:id",
+  upload.fields([
+    { name: "applicant_photo", maxCount: 1 },
+    { name: "applicant_signature", maxCount: 1 },
+  ]),
+  applicantController.resubmitApplicant.bind(applicantController),
+);
+
 router.get(
   "/",
   verifyAdmin,

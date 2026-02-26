@@ -70,6 +70,73 @@ class ApplicantController {
     }
   }
 
+  // Handles the PUT /api/v1/applicants/:id endpoint for resubmissions
+  async resubmitApplicant(req, res) {
+    try {
+      const { id } = req.params;
+
+      // 1. Validate the incoming edited text fields
+      const validatedData = await createApplicantDto.validateAsync(req.body, {
+        abortEarly: false,
+      });
+
+      // 2. Check if the applicant uploaded new files during the edit
+      if (req.files) {
+        const newFiles = [];
+        if (req.files["applicant_photo"]) {
+          const photoUrl = await storageService.uploadToMinio(
+            req.files["applicant_photo"][0],
+          );
+          newFiles.push({ file_type: "PHOTO", minio_url: photoUrl });
+        }
+        if (req.files["applicant_signature"]) {
+          const signatureUrl = await storageService.uploadToMinio(
+            req.files["applicant_signature"][0],
+          );
+          newFiles.push({ file_type: "SIGNATURE", minio_url: signatureUrl });
+        }
+
+        // If new files were uploaded, attach them to be processed
+        if (newFiles.length > 0) {
+          validatedData.files = newFiles;
+        }
+      }
+
+      // 3. Pass the ID and the new data to the Service Layer
+      const updatedApplicant = await applicantService.resubmitApplication(
+        id,
+        validatedData,
+      );
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Application resubmitted successfully. A new approval link has been sent to the Proposer.",
+        data: {
+          id: updatedApplicant.id,
+          status: updatedApplicant.status,
+        },
+      });
+    } catch (error) {
+      if (error.isJoi) {
+        return res.status(400).json({
+          success: false,
+          message: "Validation failed on edited data",
+          errors: error.details.map((err) => err.message),
+        });
+      }
+
+      console.error("Error in resubmitApplicant controller:", error);
+      const statusCode = error.statusCode || 500;
+      return res.status(statusCode).json({
+        success: false,
+        message:
+          error.message ||
+          "An internal server error occurred while resubmitting.",
+      });
+    }
+  }
+
   // Handles the GET /api/applicants endpoint (For Admin Dashboard)
   async getApplicants(req, res) {
     try {
