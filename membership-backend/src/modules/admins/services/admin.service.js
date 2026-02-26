@@ -39,7 +39,7 @@ class AdminService {
   }
 
   async getAllProposers(searchTerm = "") {
-    const whereClause = { role: "MEMBER" };
+    const whereClause = { role: "MEMBER", is_active: true };
 
     if (searchTerm) {
       whereClause.name = {
@@ -55,6 +55,49 @@ class AdminService {
     });
 
     return members;
+  }
+
+  async getAllMembersForAdmin() {
+    return await Member.findAll({
+      attributes: [
+        "id",
+        "name",
+        "email",
+        "mobile_number",
+        "role",
+        "is_active",
+        "createdAt",
+      ],
+      order: [["name", "ASC"]],
+    });
+  }
+
+  async toggleMemberStatus(memberId) {
+    const member = await Member.findByPk(memberId);
+    if (!member) {
+      throw { statusCode: 404, message: "Member not found." };
+    }
+
+    // Safety check: Prevent disabling the President
+    if (member.role === "PRESIDENT") {
+      throw {
+        statusCode: 400,
+        message: "Cannot change the status of the President.",
+      };
+    }
+
+    // Flip the boolean value
+    member.is_active = !member.is_active;
+    await member.save();
+
+    return {
+      success: true,
+      message: `${member.name} is now ${member.is_active ? "Active" : "Inactive"}.`,
+      data: {
+        id: member.id,
+        is_active: member.is_active,
+      },
+    };
   }
 
   async approveAndPromoteToMember(applicantId, registrationNumber) {

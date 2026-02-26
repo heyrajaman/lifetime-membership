@@ -17,6 +17,11 @@ const Member = sequelize.define(
       allowNull: false,
     },
     role: { type: DataTypes.ENUM("MEMBER", "PRESIDENT"), allowNull: false },
+    is_active: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+      allowNull: false,
+    },
   },
   { tableName: "members", timestamps: true },
 );
