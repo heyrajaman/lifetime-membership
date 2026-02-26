@@ -21,6 +21,18 @@ class PaymentController {
     }
   }
 
+  async getFee(req, res) {
+    try {
+      const result = await paymentService.getMembershipFee();
+      return res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      console.error("Error fetching public fee:", error);
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to fetch fee." });
+    }
+  }
+
   async verifyPayment(req, res) {
     try {
       const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
@@ -49,13 +61,15 @@ class PaymentController {
     }
   }
 
-async checkStatus(req, res, next) {
+  async checkStatus(req, res, next) {
     try {
       const { applicant_id } = req.params;
       const applicant = await Applicant.findByPk(applicant_id);
-      
+
       if (!applicant) {
-        return res.status(404).json({ success: false, message: "Applicant not found." });
+        return res
+          .status(404)
+          .json({ success: false, message: "Applicant not found." });
       }
 
       // If status is PAYMENT_COMPLETED, tell React 'isPaid: true'
@@ -66,7 +80,6 @@ async checkStatus(req, res, next) {
       next(error);
     }
   }
-
 }
 
 export default new PaymentController();

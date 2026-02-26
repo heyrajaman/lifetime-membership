@@ -8,6 +8,7 @@ import {
   Applicant,
   sequelize,
   FileUpload,
+  Setting,
 } from "../../../database/index.js";
 import "../../../config/env.js";
 import { Op } from "sequelize";

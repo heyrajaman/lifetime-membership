@@ -88,6 +88,14 @@ class PaymentService {
     }
   }
 
+  async getMembershipFee() {
+    // We don't need a transaction here since we are just reading one value
+    const feeSetting = await Setting.findByPk("LIFETIME_MEMBERSHIP_FEE");
+    const currentFee = feeSetting ? parseInt(feeSetting.value) : 1510;
+
+    return { fee: currentFee };
+  }
+
   // 2. Cryptographically verifies the payment after frontend checkout is done
   async verifyPaymentSignature(
     razorpay_order_id,
