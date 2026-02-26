@@ -1,5 +1,10 @@
 import crypto from "crypto";
-import { sequelize, ApprovalToken, Member } from "../../../database/index.js";
+import {
+  sequelize,
+  ApprovalToken,
+  Member,
+  Applicant,
+} from "../../../database/index.js";
 import applicantRepository from "../repositories/applicant.repository.js";
 import emailService from "../../common/services/email.service.js";
 
@@ -48,6 +53,71 @@ class ApplicantService {
     } catch (error) {
       // If ANY step fails (e.g., token fails to save), rollback the entire process
       // This prevents "orphaned" applicants who have no approval token
+      await transaction.rollback();
+      throw error;
+    }
+  }
+
+  async resubmitApplication(applicantId, updatedData) {
+    const transaction = await sequelize.transaction();
+
+    try {
+      // 1. Find the existing applicant
+      const applicant = await Applicant.findByPk(applicantId, { transaction });
+      if (!applicant) {
+        throw { statusCode: 404, message: "Applicant not found." };
+      }
+
+      // 2. Security Check: Only allow edits if they were actually rejected by a Member
+      if (applicant.status !== "REJECTED_BY_MEMBER") {
+        throw {
+          statusCode: 400,
+          message: `Application cannot be edited in its current state: ${applicant.status}`,
+        };
+      }
+
+      // 3. Update the applicant data and reset the status
+      await applicant.update(
+        {
+          ...updatedData,
+          status: "PENDING_MEMBER_APPROVAL", // Resetting the state machine!
+        },
+        { transaction },
+      );
+
+      // 4. Generate a fresh, secure approval token
+      const newToken = crypto.randomBytes(32).toString("hex");
+
+      // 5. Save the new token to the database
+      await ApprovalToken.create(
+        {
+          applicant_id: applicant.id,
+          token: newToken,
+          role_required: "MEMBER",
+        },
+        { transaction },
+      );
+
+      // 6. Fetch the newly selected (or same) proposer's email
+      const proposer = await Member.findByPk(
+        updatedData.proposer_member_id || applicant.proposer_member_id,
+        {
+          transaction,
+        },
+      );
+
+      // 7. Fire the email to the proposer so they can review the new data
+      if (proposer) {
+        await emailService.sendMemberApprovalEmail(
+          proposer.email,
+          applicant.full_name,
+          newToken,
+        );
+      }
+
+      await transaction.commit();
+      return applicant;
+    } catch (error) {
       await transaction.rollback();
       throw error;
     }
