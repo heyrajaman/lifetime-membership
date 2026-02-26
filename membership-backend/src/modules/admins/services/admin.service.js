@@ -239,6 +239,38 @@ class AdminService {
       registrationNumber: applicant.registration_number || "ID",
     };
   }
+
+  // NEW: Fetch current system settings (like the fee)
+  async getSystemSettings() {
+    return await Setting.findAll();
+  }
+
+  // NEW: Update the membership fee
+  async updateMembershipFee(newValue) {
+    if (!newValue || isNaN(newValue) || newValue <= 0) {
+      throw {
+        statusCode: 400,
+        message: "Please provide a valid numeric fee amount.",
+      };
+    }
+
+    const setting = await Setting.findByPk("LIFETIME_MEMBERSHIP_FEE");
+    if (!setting) {
+      // Create it if it doesn't exist for some reason
+      await Setting.create({
+        key: "LIFETIME_MEMBERSHIP_FEE",
+        value: newValue.toString(),
+      });
+    } else {
+      setting.value = newValue.toString();
+      await setting.save();
+    }
+
+    return {
+      success: true,
+      message: `Membership fee updated to ₹${newValue} successfully.`,
+    };
+  }
 }
 
 export default new AdminService();

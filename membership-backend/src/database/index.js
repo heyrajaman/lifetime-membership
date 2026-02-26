@@ -7,6 +7,7 @@ import Applicant from "./models/Applicant.js";
 import ApprovalToken from "./models/ApprovalToken.js";
 import Payment from "./models/Payment.js";
 import FileUpload from "./models/FileUpload.js";
+import Setting from "./models/Setting.js";
 
 // Define Associations
 Member.hasMany(Applicant, {
@@ -54,4 +55,5 @@ export {
   ApprovalToken,
   Payment,
   FileUpload,
+  Setting,
 };

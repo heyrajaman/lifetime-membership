@@ -126,6 +126,30 @@ class AdminController {
       });
     }
   }
+
+  async getSettings(req, res) {
+    try {
+      const settings = await adminService.getSystemSettings();
+      return res.status(200).json({ success: true, data: settings });
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to fetch settings." });
+    }
+  }
+
+  async updateFee(req, res) {
+    try {
+      const { amount } = req.body;
+      const result = await adminService.updateMembershipFee(amount);
+      return res.status(200).json(result);
+    } catch (error) {
+      const statusCode = error.statusCode || 500;
+      return res
+        .status(statusCode)
+        .json({ success: false, message: error.message });
+    }
+  }
 }
 
 export default new AdminController();

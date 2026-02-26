@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { sequelize, Admin, Member } from "../database/index.js";
+import { sequelize, Admin, Member, Setting } from "../database/index.js";
 import { testDbConnection } from "../config/database.js";
 
 const seedDatabase = async () => {
@@ -75,6 +75,13 @@ const seedDatabase = async () => {
         console.log(`✅ Member created: ${memberData.name}`);
       }
     }
+
+    console.log("⚙️ Setting up default system settings...");
+    await Setting.upsert({
+      key: "LIFETIME_MEMBERSHIP_FEE",
+      value: "1510",
+    });
+    console.log("✅ Default Membership Fee set to 1510.");
 
     console.log("🌱 Seeding complete! You can now start your server.");
     process.exit(0);

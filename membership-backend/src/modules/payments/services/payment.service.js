@@ -1,6 +1,11 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
-import { sequelize, Applicant, Payment } from "../../../database/index.js";
+import {
+  sequelize,
+  Applicant,
+  Payment,
+  Setting,
+} from "../../../database/index.js";
 import "../../../config/env.js";
 
 class PaymentService {
@@ -9,7 +14,6 @@ class PaymentService {
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
-    this.MEMBERSHIP_FEE = 1510; // Fixed fee for Lifetime Membership
   }
 
   // 1. Creates a Razorpay Order when the frontend requests it
@@ -17,6 +21,12 @@ class PaymentService {
     const transaction = await sequelize.transaction();
 
     try {
+      const feeSetting = await Setting.findByPk("LIFETIME_MEMBERSHIP_FEE", {
+        transaction,
+      });
+
+      const currentFee = feeSetting ? parseInt(feeSetting.value) : 1510;
+
       const applicant = await Applicant.findByPk(applicantId, { transaction });
 
       if (!applicant) {
@@ -45,9 +55,9 @@ class PaymentService {
 
       // Create order via Razorpay API (amount must be in paise, so multiply by 100)
       const options = {
-        amount: this.MEMBERSHIP_FEE * 100,
+        amount: currentFee * 100,
         currency: "INR",
-        receipt: `receipt_app_${applicantId.substring(0, 8)}_${Date.now()}`, // Added timestamp to allow multiple retries to have unique receipts
+        receipt: `receipt_app_${applicantId.substring(0, 8)}_${Date.now()}`,
       };
 
       const order = await this.razorpay.orders.create(options);
@@ -57,7 +67,7 @@ class PaymentService {
         {
           applicant_id: applicantId,
           razorpay_order_id: order.id,
-          amount: this.MEMBERSHIP_FEE,
+          amount: currentFee,
           status: "PENDING",
         },
         { transaction },
@@ -68,7 +78,7 @@ class PaymentService {
       return {
         order_id: order.id,
         amount_in_paise: order.amount,
-        amount_in_rupees: this.MEMBERSHIP_FEE,
+        amount_in_rupees: currentFee,
         currency: order.currency,
         key_id: process.env.RAZORPAY_KEY_ID,
       };
