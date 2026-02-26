@@ -70,6 +70,71 @@ class ApplicantController {
     }
   }
 
+  // Handles the POST /api/v1/applicants/admin-submit endpoint
+  async createApplicantByAdmin(req, res) {
+    try {
+      // 1. Validate the text fields using our updated DTO (includes Verhoeff check)
+      const validatedData = await createApplicantDto.validateAsync(req.body, {
+        abortEarly: false,
+      });
+
+      // 2. Ensure files were actually uploaded
+      if (
+        !req.files ||
+        !req.files["applicant_photo"] ||
+        !req.files["applicant_signature"]
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Photo and signature are required.",
+        });
+      }
+
+      // 3. Upload files to MinIO
+      const photoUrl = await storageService.uploadToMinio(
+        req.files["applicant_photo"][0],
+      );
+      const signatureUrl = await storageService.uploadToMinio(
+        req.files["applicant_signature"][0],
+      );
+
+      // 4. Attach the file data
+      validatedData.files = [
+        { file_type: "PHOTO", minio_url: photoUrl },
+        { file_type: "SIGNATURE", minio_url: signatureUrl },
+      ];
+
+      // 5. Pass to the exact same Service Layer to trigger the normal workflow
+      const newApplicant =
+        await applicantService.submitApplication(validatedData);
+
+      return res.status(201).json({
+        success: true,
+        message:
+          "Application submitted successfully by Admin. Pending member approval.",
+        data: {
+          id: newApplicant.id,
+          status: newApplicant.status,
+        },
+      });
+    } catch (error) {
+      if (error.isJoi) {
+        return res.status(400).json({
+          success: false,
+          message: "Validation failed",
+          errors: error.details.map((err) => err.message),
+        });
+      }
+
+      console.error("Error in createApplicantByAdmin controller:", error);
+      return res.status(500).json({
+        success: false,
+        message:
+          "An internal server error occurred while processing the admin submission.",
+      });
+    }
+  }
+
   // Handles the PUT /api/v1/applicants/:id endpoint for resubmissions
   async resubmitApplicant(req, res) {
     try {

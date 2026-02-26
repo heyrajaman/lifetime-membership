@@ -14,6 +14,16 @@ router.post(
   applicantController.createApplicant.bind(applicantController),
 );
 
+router.post(
+  "/admin-submit",
+  verifyAdmin,
+  upload.fields([
+    { name: "applicant_photo", maxCount: 1 },
+    { name: "applicant_signature", maxCount: 1 },
+  ]),
+  applicantController.createApplicantByAdmin.bind(applicantController),
+);
+
 router.put(
   "/:id",
   upload.fields([
