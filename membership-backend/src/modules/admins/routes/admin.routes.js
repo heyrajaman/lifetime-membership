@@ -14,4 +14,10 @@ router.post(
   adminController.promoteApplicant.bind(adminController),
 );
 
+router.get(
+  "/members/:id/id-card",
+  verifyAdmin,
+  adminController.downloadIdCard.bind(adminController),
+);
+
 export default router;

@@ -67,6 +67,35 @@ class AdminController {
         .json({ success: false, message: error.message });
     }
   }
+
+  // Handles the GET request to download the ID card
+  async downloadIdCard(req, res) {
+    try {
+      const { id } = req.params;
+
+      // 1. Get the raw PDF buffer and Registration Number from the Service
+      const { buffer, registrationNumber } =
+        await adminService.generateMemberIdCard(id);
+
+      // 2. Set the HTTP headers to tell the browser this is a PDF file download
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="ID_Card_${registrationNumber}.pdf"`,
+      );
+      res.setHeader("Content-Length", buffer.length);
+
+      // 3. Stream the file back to the client
+      return res.end(buffer);
+    } catch (error) {
+      console.error("Error generating ID card:", error);
+      const statusCode = error.statusCode || 500;
+      return res.status(statusCode).json({
+        success: false,
+        message: error.message || "Failed to generate ID card.",
+      });
+    }
+  }
 }
 
 export default new AdminController();

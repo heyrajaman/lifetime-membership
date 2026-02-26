@@ -1,10 +1,13 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import pdfService from "../../common/services/pdf.service.js";
+import emailService from "../../common/services/email.service.js";
 import {
   Admin,
   Member,
   Applicant,
   sequelize,
+  FileUpload,
 } from "../../../database/index.js";
 import "../../../config/env.js";
 import { Op } from "sequelize";
@@ -59,8 +62,10 @@ class AdminService {
 
     try {
       // 1. Find the applicant
-      const applicant = await Applicant.findByPk(applicantId, { transaction });
-
+      const applicant = await Applicant.findByPk(applicantId, {
+        include: [{ model: FileUpload, as: "files" }],
+        transaction,
+      });
       if (!applicant) {
         throw { statusCode: 404, message: "Applicant not found." };
       }
@@ -108,12 +113,34 @@ class AdminService {
           {
             name: applicant.full_name,
             email: applicant.email,
-            mobile_number: applicant.mobile_number, // NEW: Mapping the mobile number securely
+            mobile_number: applicant.mobile_number,
             role: "MEMBER",
           },
           { transaction },
         );
       }
+
+      const photoFile = applicant.files?.find((f) => f.file_type === "PHOTO");
+
+      const memberDataForPdf = {
+        name: applicant.full_name,
+        registration_number: registrationNumber,
+        mobile_number: applicant.mobile_number,
+        email: applicant.email,
+        address: applicant.current_address,
+        photo_url: photoFile ? photoFile.minio_url : null,
+      };
+
+      // Draw the PDF in memory
+      const pdfBuffer = await pdfService.generateIdCardBuffer(memberDataForPdf);
+
+      // Email the PDF to the newly promoted applicant
+      await emailService.sendWelcomeEmailWithIdCard(
+        applicant.email,
+        applicant.full_name,
+        pdfBuffer,
+        registrationNumber,
+      );
 
       await transaction.commit();
 
@@ -125,6 +152,49 @@ class AdminService {
       await transaction.rollback();
       throw error;
     }
+  }
+
+  // Generates the ID Card PDF on-the-fly for a specific member
+  async generateMemberIdCard(memberId) {
+    // 1. Fetch the Member
+    const member = await Member.findByPk(memberId);
+    if (!member) {
+      throw { statusCode: 404, message: "Member not found." };
+    }
+
+    // 2. Fetch their original Applicant profile to get the photo and address
+    const applicant = await Applicant.findOne({
+      where: { email: member.email },
+      include: [{ model: FileUpload, as: "files" }],
+    });
+
+    if (!applicant) {
+      throw {
+        statusCode: 404,
+        message: "Original application details not found for this member.",
+      };
+    }
+
+    // 3. Extract the Photo URL from the attached files
+    const photoFile = applicant.files?.find((f) => f.file_type === "PHOTO");
+
+    // 4. Construct the unified payload for the PDF Engine
+    const memberData = {
+      name: member.name,
+      registration_number: applicant.registration_number || "N/A",
+      mobile_number: member.mobile_number,
+      email: member.email,
+      address: applicant.current_address,
+      photo_url: photoFile ? photoFile.minio_url : null,
+    };
+
+    // 5. Generate the PDF buffer in memory
+    const pdfBuffer = await pdfService.generateIdCardBuffer(memberData);
+
+    return {
+      buffer: pdfBuffer,
+      registrationNumber: applicant.registration_number || "ID",
+    };
   }
 }
 
