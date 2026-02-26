@@ -73,8 +73,8 @@ class PaymentController {
       }
 
       // If status is PAYMENT_COMPLETED, tell React 'isPaid: true'
-      const isPaid = applicant.status === "PAYMENT_COMPLETED";
-
+      const isPaid = applicant.status === 'PAYMENT_COMPLETED' || applicant.status === 'MEMBER';
+      
       res.status(200).json({ success: true, isPaid, status: applicant.status });
     } catch (error) {
       next(error);

@@ -40,7 +40,7 @@ router.get(
 );
 router.get(
   "/:id",
-  verifyAdmin,
+ // verifyAdmin,
   applicantController.getApplicantById.bind(applicantController),
 );
 
