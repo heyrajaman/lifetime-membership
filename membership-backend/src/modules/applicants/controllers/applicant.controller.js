@@ -51,6 +51,7 @@ class ApplicantController {
         },
       });
     } catch (error) {
+
       // 4. Handle Joi Validation Errors specifically (HTTP 400 Bad Request)
       if (error.isJoi) {
         return res.status(400).json({
@@ -59,7 +60,23 @@ class ApplicantController {
           errors: error.details.map((err) => err.message),
         });
       }
+// 2. --- NEW: Catch Database Duplicate Errors ---
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        const duplicateField = error.errors[0].path; // e.g., 'mobile_number' or 'aadhar_card'
+        let customMessage = "This record already exists.";
 
+        if (duplicateField === 'mobile_number') {
+            customMessage = "हा मोबाईल नंबर आधीच नोंदणीकृत आहे. (This mobile number is already registered.)";
+        } else if (duplicateField === 'aadhar_card' || duplicateField === 'aadhar_number') {
+            customMessage = "हे आधार कार्ड आधीच नोंदणीकृत आहे. (This Aadhar card is already registered.)";
+        } else if (duplicateField === 'email') {
+            customMessage = "हा ई-मेल आधीच नोंदणीकृत आहे. (This email is already registered.)";
+        }
+        return res.status(400).json({
+          success: false,
+          message: customMessage,
+        });
+      }
       // 5. Handle unexpected Server Errors (HTTP 500)
       console.error("Error in createApplicant controller:", error);
       return res.status(500).json({
