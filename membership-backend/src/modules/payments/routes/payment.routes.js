@@ -14,5 +14,8 @@ router.post(
 // Route to verify an order (Frontend calls this after Razorpay checkout succeeds)
 router.post("/verify", paymentController.verifyPayment.bind(paymentController));
 
-router.get("/status/:applicant_id", paymentController.checkStatus);
+router.get(
+  "/status/:applicant_id",
+  paymentController.checkStatus.bind(paymentController),
+);
 export default router;
