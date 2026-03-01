@@ -24,6 +24,55 @@ class AdminController {
     }
   }
 
+  // NEW: Handles admin editing applicant details
+  async editApplicant(req, res) {
+    try {
+      const { id } = req.params;
+      const updateData = req.body; // Contains the text fields edited by admin
+
+      const updatedApplicant = await adminService.updateApplicantDetails(
+        id,
+        updateData,
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Applicant details updated successfully.",
+        data: updatedApplicant,
+      });
+    } catch (error) {
+      console.error("Error editing applicant:", error);
+      const statusCode = error.statusCode || 500;
+      return res
+        .status(statusCode)
+        .json({ success: false, message: error.message });
+    }
+  }
+
+  // NEW: Handles admin approving or rejecting the form
+  async reviewApplicant(req, res) {
+    try {
+      const { id } = req.params;
+      const { action } = req.body; // 'APPROVE' or 'REJECT'
+
+      if (!action || !["APPROVE", "REJECT"].includes(action)) {
+        return res.status(400).json({
+          success: false,
+          message: "Action must be strictly 'APPROVE' or 'REJECT'.",
+        });
+      }
+
+      const result = await adminService.processAdminReview(id, action);
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error("Error reviewing applicant:", error);
+      const statusCode = error.statusCode || 500;
+      return res
+        .status(statusCode)
+        .json({ success: false, message: error.message });
+    }
+  }
+
   async getProposers(req, res) {
     try {
       // Extract search from the URL query parameters

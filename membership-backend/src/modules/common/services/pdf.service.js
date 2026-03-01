@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import "../../../config/env.js"; // <-- NEW: Ensure environment variables are loaded
 
 class PdfService {
   /**
@@ -52,8 +53,23 @@ class PdfService {
         // 3. Profile Photo (Left Side)
         if (memberData.photo_url) {
           try {
-            // Fetch the image from MinIO URL into an ArrayBuffer
-            const response = await fetch(memberData.photo_url);
+            // --- NEW FIX START ---
+            let fullPhotoUrl = memberData.photo_url;
+
+            // If the URL is just a path (e.g. "/membership-uploads/123.jpg"), add the MinIO server details
+            if (!fullPhotoUrl.startsWith("http")) {
+              const minioEndpoint = process.env.MINIO_ENDPOINT || "127.0.0.1";
+              const minioPort = process.env.MINIO_PORT || "9000";
+              const protocol =
+                process.env.MINIO_USE_SSL === "true" ? "https" : "http";
+
+              fullPhotoUrl = `${protocol}://${minioEndpoint}:${minioPort}${fullPhotoUrl}`;
+            }
+
+            // Fetch the image from the absolute MinIO URL into an ArrayBuffer
+            const response = await fetch(fullPhotoUrl);
+            // --- NEW FIX END ---
+
             const arrayBuffer = await response.arrayBuffer();
             const imageBuffer = Buffer.from(arrayBuffer);
 
@@ -67,7 +83,10 @@ class PdfService {
               .strokeColor("#999999")
               .stroke();
           } catch (imgErr) {
-            console.error("Failed to load profile photo for PDF:", imgErr);
+            console.error(
+              "Failed to load profile photo for PDF:",
+              imgErr.message,
+            );
             // Fallback placeholder if image fails to load
             doc.rect(10, 45, 55, 70).fillAndStroke("#eeeeee", "#cccccc");
             doc

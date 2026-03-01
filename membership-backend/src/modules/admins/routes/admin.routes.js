@@ -13,6 +13,20 @@ router.get(
   adminController.getSettings.bind(adminController),
 );
 
+// Admin: Edit applicant text details
+router.put(
+  "/applicants/:id/edit",
+  verifyAdmin,
+  adminController.editApplicant.bind(adminController),
+);
+
+// Admin: Approve or Reject the application
+router.post(
+  "/applicants/:id/review",
+  verifyAdmin,
+  adminController.reviewApplicant.bind(adminController),
+);
+
 router.get("/members", adminController.getProposers.bind(adminController));
 // Admin: Get full list of members for management grid
 router.get(

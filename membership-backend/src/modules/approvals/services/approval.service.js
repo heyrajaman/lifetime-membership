@@ -66,60 +66,41 @@ class ApprovalService {
         };
       }
 
-      // 4. Handle MEMBER APPROVAL logic
+      // 4. Handle MEMBER APPROVAL logic (Now goes to ADMIN)
       if (expectedRole === "MEMBER" && action === "APPROVE") {
-        applicant.status = "PENDING_PRESIDENT_APPROVAL";
+        applicant.status = "PENDING_ADMIN_REVIEW"; // <-- CHANGED
         await applicant.save({ transaction });
 
-        // Generate the NEXT token for the President
-        const newRawToken = crypto.randomBytes(32).toString("hex");
-        await ApprovalToken.create(
-          {
-            applicant_id: applicant.id,
-            token: newRawToken,
-            role_required: "PRESIDENT",
-          },
-          { transaction },
-        );
-
-        // Fetch President's email and send the secondary approval link
-        const president = await Member.findOne({
-          where: { role: "PRESIDENT" },
-          transaction,
-        });
-        if (president) {
-          await emailService.sendPresidentApprovalEmail(
-            president.email,
-            applicant.full_name,
-            newRawToken,
-          );
-        }
+        // Note: We DO NOT generate the President token here anymore.
+        // The Admin will do that after verifying the form in the dashboard.
 
         await transaction.commit();
         return {
           success: true,
-          message: "Application approved by Member. Forwarded to President.",
+          message:
+            "Application approved by Member. Forwarded to Admin for review.",
         };
       }
 
-      // 5. Handle PRESIDENT APPROVAL logic
+      // 5. Handle PRESIDENT APPROVAL logic (Goes to Applicant Recheck/Payment)
       if (expectedRole === "PRESIDENT" && action === "APPROVE") {
         applicant.status = "PAYMENT_PENDING";
         await applicant.save({ transaction });
 
-        // Generate a generic payment URL (We will integrate Razorpay tightly in Step 13)
-        const paymentUrl = `${process.env.FRONTEND_URL}/payment?applicant_id=${applicant.id}`;
+        // Generate a URL for the read-only recheck form with the payment button
+        const recheckUrl = `${process.env.FRONTEND_URL}/recheck-application/${applicant.id}`;
+
         await emailService.sendPaymentEmail(
           applicant.email,
           applicant.full_name,
-          paymentUrl,
+          recheckUrl,
         );
 
         await transaction.commit();
         return {
           success: true,
           message:
-            "Application approved by President. Payment link sent to applicant.",
+            "Application approved by President. Form recheck & payment link sent to applicant.",
         };
       }
     } catch (error) {
@@ -130,7 +111,6 @@ class ApprovalService {
 
   // Fetches full applicant details securely using only the email token
   async getApplicantDetailsByToken(tokenStr, expectedRole) {
-    // Find the valid, unused token and join it with the full Applicant and Proposer data
     const tokenRecord = await ApprovalToken.findOne({
       where: { token: tokenStr, role_required: expectedRole },
       include: [
@@ -139,7 +119,6 @@ class ApprovalService {
           as: "applicant",
           include: [
             { model: Member, as: "proposer", attributes: ["name"] },
-            // If you imported FileUpload at the top, you can include files here too
             {
               model: FileUpload,
               as: "files",
@@ -158,7 +137,6 @@ class ApprovalService {
       throw error;
     }
 
-    // Return the full applicant data so the frontend can display the form
     return {
       applicant: tokenRecord.applicant,
       is_used: tokenRecord.is_used,

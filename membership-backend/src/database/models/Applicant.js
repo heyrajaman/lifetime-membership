@@ -42,10 +42,10 @@ const Applicant = sequelize.define(
     status: {
       type: DataTypes.ENUM(
         "PENDING_MEMBER_APPROVAL",
-        "APPROVED_BY_MEMBER",
         "REJECTED_BY_MEMBER",
+        "PENDING_ADMIN_REVIEW",
+        "REJECTED_BY_ADMIN",
         "PENDING_PRESIDENT_APPROVAL",
-        "APPROVED_BY_PRESIDENT",
         "REJECTED_BY_PRESIDENT",
         "PAYMENT_PENDING",
         "PAYMENT_COMPLETED",
