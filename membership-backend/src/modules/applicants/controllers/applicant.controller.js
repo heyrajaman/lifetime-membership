@@ -15,11 +15,14 @@ class ApplicantController {
       if (
         !req.files ||
         !req.files["applicant_photo"] ||
-        !req.files["applicant_signature"]
+        !req.files["applicant_signature"] ||
+        !req.files["aadhar_front"] ||
+        !req.files["aadhar_back"]
       ) {
         return res.status(400).json({
           success: false,
-          message: "Photo and signature are required.",
+          message:
+            "Photo, signature, and both sides of Aadhar card are required.",
         });
       }
 
@@ -30,11 +33,19 @@ class ApplicantController {
       const signatureUrl = await storageService.uploadToMinio(
         req.files["applicant_signature"][0],
       );
+      const aadharFrontUrl = await storageService.uploadToMinio(
+        req.files["aadhar_front"][0],
+      );
+      const aadharBackUrl = await storageService.uploadToMinio(
+        req.files["aadhar_back"][0],
+      );
 
       // 4. Attach the file data to the payload for the Service layer
       validatedData.files = [
         { file_type: "PHOTO", minio_url: photoUrl },
         { file_type: "SIGNATURE", minio_url: signatureUrl },
+        { file_type: "AADHAR_FRONT", minio_url: aadharFrontUrl },
+        { file_type: "AADHAR_BACK", minio_url: aadharBackUrl },
       ];
 
       // 5. Pass to Service Layer
@@ -51,7 +62,6 @@ class ApplicantController {
         },
       });
     } catch (error) {
-
       // 4. Handle Joi Validation Errors specifically (HTTP 400 Bad Request)
       if (error.isJoi) {
         return res.status(400).json({
@@ -60,17 +70,17 @@ class ApplicantController {
           errors: error.details.map((err) => err.message),
         });
       }
-// 2. --- NEW: Catch Database Duplicate Errors ---
-      if (error.name === 'SequelizeUniqueConstraintError') {
+      // 2. --- NEW: Catch Database Duplicate Errors ---
+      if (error.name === "SequelizeUniqueConstraintError") {
         const duplicateField = error.errors[0].path; // e.g., 'mobile_number' or 'aadhar_card'
         let customMessage = "This record already exists.";
 
-        if (duplicateField === 'mobile_number') {
-            customMessage = "हा मोबाईल नंबर आधीच नोंदणीकृत आहे. (This mobile number is already registered.)";
-        } else if (duplicateField === 'aadhar_card' || duplicateField === 'aadhar_number') {
-            customMessage = "हे आधार कार्ड आधीच नोंदणीकृत आहे. (This Aadhar card is already registered.)";
-        } else if (duplicateField === 'email') {
-            customMessage = "हा ई-मेल आधीच नोंदणीकृत आहे. (This email is already registered.)";
+        if (duplicateField === "mobile_number") {
+          customMessage =
+            "हा मोबाईल नंबर आधीच नोंदणीकृत आहे. (This mobile number is already registered.)";
+        } else if (duplicateField === "email") {
+          customMessage =
+            "हा ई-मेल आधीच नोंदणीकृत आहे. (This email is already registered.)";
         }
         return res.status(400).json({
           success: false,
@@ -90,38 +100,44 @@ class ApplicantController {
   // Handles the POST /api/v1/applicants/admin-submit endpoint
   async createApplicantByAdmin(req, res) {
     try {
-      // 1. Validate the text fields using our updated DTO (includes Verhoeff check)
       const validatedData = await createApplicantDto.validateAsync(req.body, {
         abortEarly: false,
       });
 
-      // 2. Ensure files were actually uploaded
       if (
         !req.files ||
         !req.files["applicant_photo"] ||
-        !req.files["applicant_signature"]
+        !req.files["applicant_signature"] ||
+        !req.files["aadhar_front"] ||
+        !req.files["aadhar_back"]
       ) {
         return res.status(400).json({
           success: false,
-          message: "Photo and signature are required.",
+          message:
+            "Photo, signature, and both sides of Aadhar card are required.",
         });
       }
 
-      // 3. Upload files to MinIO
       const photoUrl = await storageService.uploadToMinio(
         req.files["applicant_photo"][0],
       );
       const signatureUrl = await storageService.uploadToMinio(
         req.files["applicant_signature"][0],
       );
+      const aadharFrontUrl = await storageService.uploadToMinio(
+        req.files["aadhar_front"][0],
+      );
+      const aadharBackUrl = await storageService.uploadToMinio(
+        req.files["aadhar_back"][0],
+      );
 
-      // 4. Attach the file data
       validatedData.files = [
         { file_type: "PHOTO", minio_url: photoUrl },
         { file_type: "SIGNATURE", minio_url: signatureUrl },
+        { file_type: "AADHAR_FRONT", minio_url: aadharFrontUrl },
+        { file_type: "AADHAR_BACK", minio_url: aadharBackUrl },
       ];
 
-      // 5. Pass to the exact same Service Layer to trigger the normal workflow
       const newApplicant =
         await applicantService.submitApplication(validatedData);
 
@@ -129,10 +145,7 @@ class ApplicantController {
         success: true,
         message:
           "Application submitted successfully by Admin. Pending member approval.",
-        data: {
-          id: newApplicant.id,
-          status: newApplicant.status,
-        },
+        data: { id: newApplicant.id, status: newApplicant.status },
       });
     } catch (error) {
       if (error.isJoi) {
@@ -142,7 +155,6 @@ class ApplicantController {
           errors: error.details.map((err) => err.message),
         });
       }
-
       console.error("Error in createApplicantByAdmin controller:", error);
       return res.status(500).json({
         success: false,
@@ -176,6 +188,22 @@ class ApplicantController {
             req.files["applicant_signature"][0],
           );
           newFiles.push({ file_type: "SIGNATURE", minio_url: signatureUrl });
+        }
+
+        if (req.files["aadhar_front"]) {
+          const aadharFrontUrl = await storageService.uploadToMinio(
+            req.files["aadhar_front"][0],
+          );
+          newFiles.push({
+            file_type: "AADHAR_FRONT",
+            minio_url: aadharFrontUrl,
+          });
+        }
+        if (req.files["aadhar_back"]) {
+          const aadharBackUrl = await storageService.uploadToMinio(
+            req.files["aadhar_back"][0],
+          );
+          newFiles.push({ file_type: "AADHAR_BACK", minio_url: aadharBackUrl });
         }
 
         // If new files were uploaded, attach them to be processed

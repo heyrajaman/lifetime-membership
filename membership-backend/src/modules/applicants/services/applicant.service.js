@@ -4,6 +4,7 @@ import {
   ApprovalToken,
   Member,
   Applicant,
+  FileUpload, // <-- NEW: Imported FileUpload model
 } from "../../../database/index.js";
 import applicantRepository from "../repositories/applicant.repository.js";
 import emailService from "../../common/services/email.service.js";
@@ -59,6 +60,27 @@ class ApplicantService {
         throw { statusCode: 404, message: "Applicant not found." };
       }
 
+      // --- NEW FIX: Handle new file uploads during resubmission ---
+      if (updatedData.files && updatedData.files.length > 0) {
+        for (const newFile of updatedData.files) {
+          // 1. Delete the old file record of this specific type (e.g., old AADHAR_FRONT)
+          await FileUpload.destroy({
+            where: { applicant_id: applicantId, file_type: newFile.file_type },
+            transaction,
+          });
+
+          // 2. Insert the new file record
+          await FileUpload.create(
+            {
+              applicant_id: applicantId,
+              file_type: newFile.file_type,
+              minio_url: newFile.minio_url,
+            },
+            { transaction },
+          );
+        }
+      }
+
       // SCENARIO 1: Rejected by Member
       if (applicant.status === "REJECTED_BY_MEMBER") {
         await applicant.update(
@@ -101,7 +123,6 @@ class ApplicantService {
           },
           { transaction },
         );
-        // Note: No token is generated because Admins verify via the dashboard, not via email links!
       }
       // SCENARIO 3: Illegal state
       else {

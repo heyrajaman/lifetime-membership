@@ -10,6 +10,8 @@ router.post(
   upload.fields([
     { name: "applicant_photo", maxCount: 1 },
     { name: "applicant_signature", maxCount: 1 },
+    { name: "aadhar_front", maxCount: 1 },
+    { name: "aadhar_back", maxCount: 1 },
   ]),
   applicantController.createApplicant.bind(applicantController),
 );
@@ -20,6 +22,8 @@ router.post(
   upload.fields([
     { name: "applicant_photo", maxCount: 1 },
     { name: "applicant_signature", maxCount: 1 },
+    { name: "aadhar_front", maxCount: 1 },
+    { name: "aadhar_back", maxCount: 1 },
   ]),
   applicantController.createApplicantByAdmin.bind(applicantController),
 );
@@ -29,6 +33,8 @@ router.put(
   upload.fields([
     { name: "applicant_photo", maxCount: 1 },
     { name: "applicant_signature", maxCount: 1 },
+    { name: "aadhar_front", maxCount: 1 },
+    { name: "aadhar_back", maxCount: 1 },
   ]),
   applicantController.resubmitApplicant.bind(applicantController),
 );
@@ -40,7 +46,6 @@ router.get(
 );
 router.get(
   "/:id",
- // verifyAdmin,
   applicantController.getApplicantById.bind(applicantController),
 );
 

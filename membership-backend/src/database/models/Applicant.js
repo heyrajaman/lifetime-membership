@@ -19,11 +19,6 @@ const Applicant = sequelize.define(
       type: DataTypes.ENUM("MALE", "FEMALE", "OTHER"),
       allowNull: false,
     },
-    aadhar_number: {
-      type: DataTypes.STRING,
-      unique: true,
-      allowNull: false,
-    },
     father_or_husband_name: { type: DataTypes.STRING, allowNull: false },
     permanent_address: { type: DataTypes.TEXT, allowNull: false },
     current_address: { type: DataTypes.TEXT, allowNull: false },
