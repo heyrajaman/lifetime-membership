@@ -149,36 +149,24 @@ class EmailService {
     }
   }
 
-  // 7. Sends the final Welcome Email with the attached PDF ID Card
-  async sendWelcomeEmailWithIdCard(
-    toEmail,
-    memberName,
-    pdfBuffer,
-    registrationNumber,
-  ) {
+  // 7. Sends the final Welcome Email with the Registration Number (NO PDF)
+  async sendWelcomeEmail(toEmail, memberName, registrationNumber) {
     const mailOptions = {
       from: process.env.SMTP_USER,
       to: toEmail,
-      subject: "Welcome to Maharashtra Mandal Raipur - Your Lifetime ID Card",
+      subject: "Welcome to Maharashtra Mandal Raipur - Registration Confirmed",
       html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
           <h2 style="color: #003366;">Welcome to Maharashtra Mandal Raipur!</h2>
           <p>Dear <strong>${memberName}</strong>,</p>
           <p>Congratulations! Your application has been fully approved, and you are now an official Lifetime Member.</p>
-          <p>Your official Registration Number is: <strong style="color: #d9534f;">${registrationNumber}</strong></p>
-          <p>Please find your digital Lifetime Member ID Card attached to this email as a PDF document. You can download and keep it for your records.</p>
+          <p>Your official Registration Number is: <strong style="color: #d9534f; font-size: 1.2em;">${registrationNumber}</strong></p>
+          <p>Please keep this registration number secure for your future reference and participation in Mandal activities.</p>
           <br/>
           <p>Warm Regards,</p>
           <p><strong>Maharashtra Mandal Raipur</strong></p>
         </div>
       `,
-      attachments: [
-        {
-          filename: `Lifetime_ID_${registrationNumber}.pdf`,
-          content: pdfBuffer,
-          contentType: "application/pdf",
-        },
-      ],
     };
     return await this.transporter.sendMail(mailOptions);
   }

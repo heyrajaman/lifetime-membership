@@ -16,6 +16,20 @@ const createApplicantDto = Joi.object({
 
   current_address: Joi.string().trim().min(10).max(500).required(),
 
+  is_from_raipur: Joi.boolean().required(),
+
+  // Smart Validation: Region is required ONLY if is_from_raipur is true
+  region: Joi.string().when("is_from_raipur", {
+    is: true,
+    then: Joi.string().required().messages({
+      "any.required":
+        "Region is required since you selected you are from Raipur.",
+      "string.empty":
+        "Region cannot be empty since you selected you are from Raipur.",
+    }),
+    otherwise: Joi.string().optional().allow(null, ""),
+  }),
+
   mobile_number: Joi.string()
     .pattern(/^[6-9][0-9]{9}$/)
     .required()

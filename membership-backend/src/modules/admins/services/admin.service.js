@@ -1,7 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import crypto from "crypto"; // <-- NEW IMPORT
-import pdfService from "../../common/services/pdf.service.js";
+import crypto from "crypto";
 import emailService from "../../common/services/email.service.js";
 import {
   Admin,
@@ -10,7 +9,7 @@ import {
   sequelize,
   FileUpload,
   Setting,
-  ApprovalToken, // <-- NEW IMPORT
+  ApprovalToken,
 } from "../../../database/index.js";
 import "../../../config/env.js";
 import { Op } from "sequelize";
@@ -230,21 +229,9 @@ class AdminService {
         );
       }
 
-      const photoFile = applicant.files?.find((f) => f.file_type === "PHOTO");
-      const memberDataForPdf = {
-        name: applicant.full_name,
-        registration_number: registrationNumber,
-        mobile_number: applicant.mobile_number,
-        email: applicant.email,
-        address: applicant.current_address,
-        photo_url: photoFile ? photoFile.minio_url : null,
-      };
-
-      const pdfBuffer = await pdfService.generateIdCardBuffer(memberDataForPdf);
-      await emailService.sendWelcomeEmailWithIdCard(
+      await emailService.sendWelcomeEmail(
         applicant.email,
         applicant.full_name,
-        pdfBuffer,
         registrationNumber,
       );
 
@@ -257,37 +244,6 @@ class AdminService {
       await transaction.rollback();
       throw error;
     }
-  }
-
-  async generateMemberIdCard(memberId) {
-    const member = await Member.findByPk(memberId);
-    if (!member) throw { statusCode: 404, message: "Member not found." };
-
-    const applicant = await Applicant.findOne({
-      where: { email: member.email },
-      include: [{ model: FileUpload, as: "files" }],
-    });
-    if (!applicant)
-      throw {
-        statusCode: 404,
-        message: "Original application details not found.",
-      };
-
-    const photoFile = applicant.files?.find((f) => f.file_type === "PHOTO");
-    const memberData = {
-      name: member.name,
-      registration_number: applicant.registration_number || "N/A",
-      mobile_number: member.mobile_number,
-      email: member.email,
-      address: applicant.current_address,
-      photo_url: photoFile ? photoFile.minio_url : null,
-    };
-
-    const pdfBuffer = await pdfService.generateIdCardBuffer(memberData);
-    return {
-      buffer: pdfBuffer,
-      registrationNumber: applicant.registration_number || "ID",
-    };
   }
 
   async getSystemSettings() {

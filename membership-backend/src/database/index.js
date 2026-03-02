@@ -8,6 +8,7 @@ import ApprovalToken from "./models/ApprovalToken.js";
 import Payment from "./models/Payment.js";
 import FileUpload from "./models/FileUpload.js";
 import Setting from "./models/Setting.js";
+import Region from "./models/Region.js";
 
 // Define Associations
 Member.hasMany(Applicant, {
@@ -56,4 +57,5 @@ export {
   Payment,
   FileUpload,
   Setting,
+  Region,
 };

@@ -22,6 +22,15 @@ const Applicant = sequelize.define(
     father_or_husband_name: { type: DataTypes.STRING, allowNull: false },
     permanent_address: { type: DataTypes.TEXT, allowNull: false },
     current_address: { type: DataTypes.TEXT, allowNull: false },
+    is_from_raipur: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    region: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     mobile_number: { type: DataTypes.STRING, allowNull: false },
     email: { type: DataTypes.STRING, allowNull: false },
     education: { type: DataTypes.STRING, allowNull: false },
