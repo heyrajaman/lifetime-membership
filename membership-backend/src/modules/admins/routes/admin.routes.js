@@ -46,12 +46,6 @@ router.patch(
   adminController.updateFee.bind(adminController),
 );
 
-router.get(
-  "/members/:id/id-card",
-  verifyAdmin,
-  adminController.downloadIdCard.bind(adminController),
-);
-
 // Admin: Toggle a member's active/inactive status
 router.patch(
   "/members/:id/status",

@@ -112,6 +112,8 @@ class PaymentService {
         .update(body.toString())
         .digest("hex");
 
+      console.log("EXPECTED SIGNATURE:", expectedSignature);
+
       const isAuthentic = expectedSignature === razorpay_signature;
 
       if (!isAuthentic) {

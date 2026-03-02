@@ -1,5 +1,11 @@
 import bcrypt from "bcrypt";
-import { sequelize, Admin, Member, Setting } from "../database/index.js";
+import {
+  sequelize,
+  Admin,
+  Member,
+  Setting,
+  Region,
+} from "../database/index.js";
 import { testDbConnection } from "../config/database.js";
 
 const seedDatabase = async () => {
@@ -82,6 +88,28 @@ const seedDatabase = async () => {
       value: "1510",
     });
     console.log("✅ Default Membership Fee set to 1510.");
+
+    // --- SEED DEFAULT RAIPUR REGIONS ---
+    const defaultRegions = [
+      "Tatibandh",
+      "Shankar Nagar",
+      "Telibandha",
+      "Gudhiyari",
+      "Katora Talab",
+      "Devendra Nagar",
+      "Samta Colony",
+      "Saddu",
+      "Avanti Vihar",
+      "Rajendra Nagar",
+    ];
+
+    for (const regionName of defaultRegions) {
+      await Region.findOrCreate({
+        where: { name: regionName },
+        defaults: { is_active: true },
+      });
+    }
+    console.log("✅ Regions seeded successfully!");
 
     console.log("🌱 Seeding complete! You can now start your server.");
     process.exit(0);
